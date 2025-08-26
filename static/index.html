@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador SMSC - Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Removido Font Awesome para evitar dependências externas -->
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="icon">📡</span>
+                    <h1>Simulador SMSC</h1>
+                </div>
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Conectando...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Recent Messages -->
+            <section class="recent-messages">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="icon">📋</span>
+                        <h3>Mensagens Recentes</h3>
+                        <button class="btn btn-small" id="refreshMessages">
+                        <i class="fas fa-sync-alt"></i>
+                        Atualizar
+                    </button>
+                    <button class="btn btn-small btn-success" id="sendMessage">
+                        📤 Enviar Mensagem
+                    </button>
+                    <button class="btn btn-small btn-danger" id="clearMessages">
+                        🗑️ Limpar Mensagens
+                    </button>
+                    </div>
+                    <div class="card-content">
+                        <div id="messagesList">
+                            <p class="no-messages">Nenhuma mensagem processada ainda</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Cards -->
+            <section class="dashboard">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="icon">📊</span>
+                        <h3>Estatísticas</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="stat-item">
+                            <span class="stat-label">Total de Mensagens:</span>
+                            <span class="stat-value" id="totalMessages">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Última Mensagem:</span>
+                            <span class="stat-value" id="lastMessage">Nenhuma</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Tempo Ativo:</span>
+                            <span class="stat-value" id="uptime">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-server"></i>
+                        <h3>Status do Servidor</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="stat-item">
+                            <span class="stat-label">Serviço:</span>
+                            <span class="stat-value" id="serviceName">SMSC Simulator</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Versão:</span>
+                            <span class="stat-value" id="version">1.0.0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Porta Web:</span>
+                            <span class="stat-value" id="webPort">8080</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Porta SMS:</span>
+                            <span class="stat-value" id="smsPort">8081</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SMS Test Form -->
+            <section class="sms-test">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="icon">📤</span>
+                        <h3>Teste de Mensagem SMS</h3>
+                    </div>
+                    <div class="card-content">
+                        <form id="smsTestForm">
+                            <div class="form-group">
+                                <label for="apdu_hex">Dados Hexadecimais (APDU):</label>
+                                <textarea id="apdu_hex" name="apdu_hex" rows="3" placeholder="Ex: D0 71 81 03 01 13 00 82 02 81 83 05 00..."></textarea>
+                                <small class="form-help">Insira os dados hexadecimais do comando SMS</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="msisdn">MSISDN (Número de Telefone):</label>
+                                <input type="text" id="msisdn" name="msisdn" placeholder="Ex: +5511999999999">
+                                <small class="form-help">Número de telefone (opcional)</small>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Enviar SMS
+                                </button>
+                                <button type="button" class="btn btn-secondary example-btn" id="loadExample" data-example="simple">
+                                    <i class="fas fa-file-import"></i>
+                                    Carregar Exemplo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Response Display -->
+            <section class="response-section" id="responseSection" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-reply"></i>
+                        <h3>Resposta do Servidor</h3>
+                    </div>
+                    <div class="card-content">
+                        <div id="responseContent"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration Section -->
+            <section class="configuration">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="icon">⚙️</span>
+                        <h3>Configurações</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="config-section">
+                            <h4>Estatísticas</h4>
+                            <div class="config-item">
+                                <span class="config-label">Zerar todas as estatísticas:</span>
+                                <button class="btn btn-warning" id="resetStatsBtn">
+                                    <span class="icon">🔄</span>
+                                    Resetar Estatísticas
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="config-section">
+                            <h4>Controle do Servidor</h4>
+                            <div class="config-item">
+                                <span class="config-label">Reiniciar o servidor manualmente:</span>
+                                <button class="btn btn-danger" id="restartServerBtn">
+                                    <span class="icon">🔄</span>
+                                    Reiniciar Servidor
+                                </button>
+                            </div>
+                            <small style="color: #666; font-style: italic; margin-top: 5px; display: block;">
+                                ⚠️ Use este botão se o servidor apresentar problemas ou não estiver respondendo adequadamente.
+                            </small>
+                        </div>
+                        
+                        <div class="config-section">
+                            <h4>Servidor</h4>
+                            <div class="config-item">
+                                <span class="config-label">Porta Web (Interface):</span>
+                                <div class="config-input-group">
+                                    <input type="number" id="webPortInput" class="config-input" min="1024" max="65535" value="8080">
+                                    <button class="btn btn-small btn-primary" id="updateWebPortBtn">
+                                        <span class="icon">💾</span>
+                                        Aplicar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="config-item">
+                                <span class="config-label">Porta SMS (Handler):</span>
+                                <div class="config-input-group">
+                                    <input type="number" id="smsPortInput" class="config-input" min="1024" max="65535" value="8081">
+                                    <button class="btn btn-small btn-primary" id="updateSmsPortBtn">
+                                        <span class="icon">💾</span>
+                                        Aplicar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="config-item">
+                                <span class="config-label">Host:</span>
+                                <div class="config-input-group">
+                                    <input type="text" id="hostInput" class="config-input" value="localhost">
+                                    <button class="btn btn-small btn-primary" id="updateHostBtn">
+                                        <span class="icon">💾</span>
+                                        Aplicar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="config-item">
+                                <span class="config-label">Timeout (segundos):</span>
+                                <div class="config-input-group">
+                                    <input type="number" id="timeoutInput" class="config-input" min="1" max="300" value="30">
+                                    <button class="btn btn-small btn-primary" id="updateTimeoutBtn">
+                                        <span class="icon">💾</span>
+                                        Aplicar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="config-item">
+                                <span class="config-label">Máx. Conexões:</span>
+                                <div class="config-input-group">
+                                    <input type="number" id="maxConnectionsInput" class="config-input" min="1" max="1000" value="100">
+                                    <button class="btn btn-small btn-primary" id="updateMaxConnectionsBtn">
+                                        <span class="icon">💾</span>
+                                        Aplicar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="config-item">
+                                <span class="config-label">Tempo ativo:</span>
+                                <span class="config-value" id="serverUptime">--</span>
+                            </div>
+                        </div>
+                        
+                        <div class="config-section">
+                            <h4>Informações do Sistema</h4>
+                            <div class="config-item">
+                                <span class="config-label">Versão:</span>
+                                <span id="versionDisplay" class="readonly-value">1.0.0</span>
+                            </div>
+                            <div class="config-item">
+                                <span class="config-label">Log Level:</span>
+                                <div class="config-input-group">
+                                    <select id="logLevelInput" class="config-input">
+                                        <option value="DEBUG">DEBUG</option>
+                                        <option value="INFO" selected>INFO</option>
+                                        <option value="WARNING">WARNING</option>
+                                        <option value="ERROR">ERROR</option>
+                                    </select>
+                                    <button class="btn btn-small btn-primary" id="updateLogLevelBtn">
+                                        <span class="icon">💾</span>
+                                        Aplicar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="config-item">
+                                <span class="config-label">Total de mensagens:</span>
+                                <span class="config-value" id="totalMessagesConfig">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 Simulador SMSC - Desenvolvido para testes locais</p>
+            <div class="footer-links">
+                <a href="/status" target="_blank">API Status</a>
+                <a href="/stats" target="_blank">API Stats</a>
+                <a href="https://github.com" target="_blank">Documentação</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <span class="icon">⏳</span>
+            <p>Processando...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

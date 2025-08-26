@@ -1,0 +1,17 @@
+# Dependências do Simulador SMSC
+# Bibliotecas padrão do Python são suficientes para funcionalidade básica
+
+# Para funcionalidades avançadas (opcionais):
+# requests>=2.28.0          # Para testes HTTP
+# cryptography>=3.4.8       # Para certificados SSL auto-gerados
+# colorama>=0.4.4           # Para logs coloridos no Windows
+# pydantic>=1.10.0          # Para validação de dados
+# fastapi>=0.68.0           # Alternativa moderna ao http.server
+# uvicorn>=0.15.0           # Servidor ASGI para FastAPI
+
+# Dependências de desenvolvimento (opcionais):
+# pytest>=6.2.5            # Para testes unitários
+# pytest-cov>=2.12.1       # Para cobertura de testes
+# black>=21.9b0             # Para formatação de código
+# flake8>=3.9.2             # Para linting
+# mypy>=0.910               # Para verificação de tipos
