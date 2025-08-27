@@ -784,6 +784,8 @@ class SMSCRequestHandler(http.server.BaseHTTPRequestHandler):
                     query_params['MSISDN'] = post_params['msisdn']
                 
                 self._handle_sms_request(query_params)
+            elif parsed_url.path == '/sms-reply':
+                self._handle_sms_reply_request()
             else:
                 self._send_error_response(404, "Not Found")
         except Exception as e:
@@ -977,6 +979,57 @@ class SMSCRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             logger.error(f"Error clearing messages: {e}")
             self._send_error_response(500, f'Error clearing messages: {str(e)}')
+    
+    def _handle_sms_reply_request(self):
+        """Processa resposta de SMS"""
+        try:
+            # Lê dados do corpo da requisição
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            
+            # Parse dos dados POST
+            post_params = urllib.parse.parse_qs(post_data)
+            
+            # Extrai parâmetros necessários
+            msisdn = post_params.get('msisdn', [''])[0]
+            message = post_params.get('message', [''])[0]
+            original_message_id = post_params.get('original_message_id', [''])[0]
+            
+            if not msisdn or not message:
+                self._send_error_response(400, "Missing required parameters: msisdn and message")
+                return
+            
+            # Cria dados da mensagem de resposta
+            reply_data = {
+                'msisdn': msisdn,
+                'message': message,
+                'original_message_id': original_message_id,
+                'timestamp': datetime.now().isoformat(),
+                'direction': 'outgoing',
+                'type': 'reply',
+                'status': 'sent'
+            }
+            
+            # Adiciona mensagem de resposta
+            self.sms_handler.add_message(reply_data)
+            
+            # Log da resposta
+            logger.info(f"SMS reply sent to {msisdn}: {message[:50]}...")
+            
+            # Resposta de sucesso
+            response = {
+                'status': 'success',
+                'message': 'SMS reply sent successfully',
+                'timestamp': datetime.now().isoformat(),
+                'reply_to': msisdn,
+                'original_message_id': original_message_id
+            }
+            
+            self._send_json_response(200, response)
+            
+        except Exception as e:
+            logger.error(f"Error processing SMS reply: {e}")
+            self._send_error_response(500, f'Error processing SMS reply: {str(e)}')
     
     def log_message(self, format, *args):
         """Override para usar nosso logger"""

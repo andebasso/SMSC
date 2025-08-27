@@ -861,26 +861,84 @@ function copyToClipboard(text) {
 
 // Function to reply to a message
 function replyToMessage(msisdn, messageId) {
-    const msisdnInput = document.getElementById('msisdn');
-    const apduInput = document.getElementById('apdu_hex');
+    // Create reply modal
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Responder SMS</h3>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Para:</strong> ${msisdn}</p>
+                <p><strong>Respondendo à mensagem:</strong> #${messageId}</p>
+                <textarea id="replyMessage" placeholder="Digite sua resposta..." rows="4" style="width: 100%; margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+                <button class="btn btn-primary" onclick="sendReply('${msisdn}', '${messageId}')">Enviar Resposta</button>
+            </div>
+        </div>
+    `;
     
-    if (msisdnInput) {
-        msisdnInput.value = msisdn;
+    document.body.appendChild(modal);
+    
+    // Focus on textarea
+    setTimeout(() => {
+        const textarea = document.getElementById('replyMessage');
+        if (textarea) {
+            textarea.focus();
+        }
+    }, 100);
+}
+
+// Function to send SMS reply
+async function sendReply(msisdn, originalMessageId) {
+    const messageTextarea = document.getElementById('replyMessage');
+    const message = messageTextarea ? messageTextarea.value.trim() : '';
+    
+    if (!message) {
+        alert('Por favor, digite uma mensagem de resposta.');
+        return;
     }
     
-    if (apduInput) {
-        apduInput.focus();
+    try {
+        const response = await fetch('/sms-reply', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                msisdn: msisdn,
+                message: message,
+                original_message_id: originalMessageId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.status === 'success') {
+            // Close modal
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                modal.remove();
+            }
+            
+            // Show success notification
+            const dashboard = new SMSCDashboard();
+            dashboard.showToast(`Resposta enviada com sucesso para ${msisdn}`, 'success');
+            
+            // Refresh messages
+            dashboard.loadRecentMessages();
+            dashboard.updateStatistics();
+        } else {
+            throw new Error(result.message || 'Erro ao enviar resposta');
+        }
+    } catch (error) {
+        console.error('Error sending reply:', error);
+        alert(`Erro ao enviar resposta: ${error.message}`);
     }
-    
-    // Scroll to the SMS form
-    const smsForm = document.getElementById('smsTestForm');
-    if (smsForm) {
-        smsForm.scrollIntoView({ behavior: 'smooth' });
-    }
-    
-    // Show toast notification
-    const dashboard = new SMSCDashboard();
-    dashboard.showToast(`Respondendo à mensagem #${messageId} para ${msisdn}`, 'info');
 }
 
 // Add keyboard shortcuts
