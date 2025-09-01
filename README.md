@@ -7,10 +7,15 @@ Este é um simulador de SMSC desenvolvido em Python para testes locais com simul
 - ✅ Processamento de comandos APDU hexadecimais
 - ✅ Servidor HTTP/HTTPS
 - ✅ Parser de dados SMS
+- ✅ Interface web moderna e responsiva
+- ✅ Sistema de resposta a mensagens SMS
+- ✅ Modal interativo para resposta rápida
 - ✅ Logging detalhado
 - ✅ API REST para status e estatísticas
 - ✅ Configuração flexível
 - ✅ Cliente de teste incluído
+- ✅ Histórico completo de mensagens
+- ✅ Estatísticas em tempo real
 
 ## Instalação
 
@@ -27,20 +32,36 @@ python smsc_simulator.py
 ### Iniciando o Simulador
 
 ```bash
-# Modo padrão (porta 8080)
+# Modo padrão com interface web (porta 8080)
 python smsc_simulator.py
 
 # Com configuração personalizada
 python run_simulator.py --port 8080 --host localhost
+
+# Servidor HTTP na porta 80 (requer privilégios de administrador)
+python http_server_80.py
+
+# Usando o script de inicialização
+python start_http_server.py
 ```
+
+**Após iniciar, acesse:**
+- Interface Web: `http://localhost:8080/`
+- API Endpoints: `http://localhost:8080/status`, `/stats`, etc.
 
 ### Endpoints Disponíveis
 
 | Endpoint | Método | Descrição |
-|----------|--------|----------|
-| `/cgi-bin/smshandler.pl` | GET | Processa comandos SMS (compatível com seu simulador) |
+|----------|--------|-----------|
+| `/` | GET | Interface web principal |
+| `/cgi-bin/smshandler.pl` | GET/POST | Processa comandos SMS (compatível com seu simulador) |
+| `/sms-reply` | POST | Endpoint para resposta a mensagens SMS |
 | `/status` | GET | Status do simulador |
 | `/stats` | GET | Estatísticas de mensagens processadas |
+| `/messages` | GET | Lista todas as mensagens processadas |
+| `/simulate-outgoing` | POST | Simula mensagem de saída |
+| `/config` | GET/POST | Configurações do simulador |
+| `/config/reset-stats` | POST | Reset das estatísticas |
 | `/health` | GET | Health check |
 
 ### Exemplo de Requisição SMS
@@ -62,7 +83,61 @@ http://localhost:8080/cgi-bin/smshandler.pl?submit=D07181030113008202818305008B6
 }
 ```
 
+## Interface Web
+
+O simulador inclui uma interface web moderna e responsiva acessível em `http://localhost:8080/`
+
+### Funcionalidades da Interface Web
+
+- 📱 **Visualização de Mensagens**: Lista todas as mensagens SMS recebidas e enviadas
+- 💬 **Sistema de Resposta**: Responda mensagens diretamente pela interface
+- 📊 **Estatísticas em Tempo Real**: Acompanhe métricas do simulador
+- ⚙️ **Configurações**: Ajuste parâmetros do simulador
+- 🔄 **Atualização Automática**: Interface se atualiza automaticamente
+
+### Respondendo Mensagens SMS
+
+1. **Via Interface Web**:
+   - Acesse `http://localhost:8080/`
+   - Clique no botão "Responder" ao lado da mensagem
+   - Digite sua resposta no modal que aparece
+   - Clique em "Enviar Resposta"
+
+2. **Via API REST**:
+   ```bash
+   curl -X POST http://localhost:8080/sms-reply \
+     -H "Content-Type: application/json" \
+     -d '{
+       "msisdn": "5511999999999",
+       "message": "Sua resposta aqui",
+       "original_message_id": "1"
+     }'
+   ```
+
+### Resposta da API de Reply
+
+```json
+{
+  "status": "success",
+  "message": "Reply sent successfully",
+  "reply_id": 2
+}
+```
+
 ## Testando o Simulador
+
+### Usando a Interface Web (Recomendado)
+
+1. **Inicie o simulador**:
+   ```bash
+   python smsc_simulator.py
+   ```
+
+2. **Acesse a interface web**:
+   - Abra seu navegador em `http://localhost:8080/`
+   - Visualize mensagens em tempo real
+   - Teste o sistema de resposta
+   - Monitore estatísticas
 
 ### Usando o Cliente de Teste
 
@@ -125,13 +200,21 @@ Edite `config.py` para personalizar:
 
 ```
 SMSC/
-├── smsc_simulator.py    # Simulador principal
-├── config.py           # Configurações
-├── test_client.py      # Cliente de teste
-├── run_simulator.py    # Script de inicialização
-├── requirements.txt    # Dependências
-├── README.md          # Este arquivo
-└── logs/              # Logs (criado automaticamente)
+├── smsc_simulator.py       # Simulador principal
+├── config.py              # Configurações
+├── test_client.py         # Cliente de teste
+├── run_simulator.py       # Script de inicialização
+├── http_server_80.py      # Servidor HTTP na porta 80
+├── start_http_server.py   # Script para iniciar servidor HTTP
+├── requirements.txt       # Dependências
+├── README.md             # Este arquivo
+├── COMO_USAR_SERVICO.md  # Guia de uso do serviço
+├── INSTALACAO_SERVICO.md # Guia de instalação como serviço
+├── static/               # Arquivos da interface web
+│   ├── index.html        # Página principal
+│   ├── script.js         # JavaScript da interface
+│   └── style.css         # Estilos CSS
+└── logs/                 # Logs (criado automaticamente)
 ```
 
 ## Funcionalidades Avançadas
@@ -153,10 +236,12 @@ Todos os eventos são registrados em:
 ### Estatísticas
 
 O simulador mantém estatísticas de:
-- Total de mensagens processadas
+- Total de mensagens processadas (recebidas e enviadas)
 - Última mensagem processada
 - Tempo de atividade
-- Histórico de mensagens
+- Histórico completo de mensagens
+- Contadores separados para mensagens de entrada e saída
+- Estatísticas de respostas enviadas
 
 ## Integração com Seu Simulador de Telefone
 
